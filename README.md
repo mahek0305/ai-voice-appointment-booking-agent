@@ -1,7 +1,7 @@
 # ai-voice-appointment-booking-agent
 # 🤖 AI Voice Appointment Booking Agent
 
-An AI-powered voice appointment booking system built using **n8n** and **Vapi** during my internship at **IIT Jammu**.
+An AI-powered voice appointment booking system built using **n8n** and **Vapi** 
 
 ## 📌 Overview
 
@@ -28,11 +28,11 @@ This project automates appointment scheduling through a voice-based AI assistant
 
 ### n8n Workflow
 
-(Add image)
+![n8n Workflow](screenshots/Screenshot%20(94).png)
 
 ### Vapi Assistant
 
-(Add image)
+![Vapi Dashboard](screenshots/Screenshot%202026-07-02%20115558.png)
 
 ## 📂 Repository Structure
 
