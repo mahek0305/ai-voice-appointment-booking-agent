@@ -52,3 +52,5 @@ screenshots/
 ## 👩‍💻 Author
 
 **Mahek Thacker**
+- GitHub: https://github.com/mahek0305
+- LinkedIn: https://www.linkedin.com/in/mahek-thacker/
