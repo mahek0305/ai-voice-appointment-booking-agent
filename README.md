@@ -28,11 +28,11 @@ This project automates appointment scheduling through a voice-based AI assistant
 
 ### n8n Workflow
 
-![n8n Workflow](screenshots/workflow.png)
+![n8n Workflow](screenshorts/workflow.png)
 
 ### Vapi Assistant
 
-![Vapi Dashboard](screenshots/vapi.png)
+![Vapi Dashboard](screenshorts/vapi.png)
 
 ## 📂 Repository Structure
 
