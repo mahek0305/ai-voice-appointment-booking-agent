@@ -1,0 +1,448 @@
+{
+  "name": "Vapi Appointment Booking Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "vapi-appointment-agent",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "25f1c9bf-4a17-48b8-92e1-b3aedd5e490b",
+      "name": "Vapi Tool Call Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        192
+      ],
+      "webhookId": "ad27f7d5-67c7-4f84-8d96-f3fc81d38b88"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst body = input.body || input;\nconst message = body.message || {};\nconst toolCalls = message.toolCalls || [];\nconst call = toolCalls[0] || {};\nconst func = call.function || {};\nlet args = func.arguments;\nif (typeof args === 'string') {\n  try { args = JSON.parse(args); } catch (e) { args = {}; }\n}\nargs = args || {};\n\nreturn [{\n  json: {\n    toolCallId: call.id || '',\n    functionName: func.name || '',\n    customerName: args.name || args.customerName || '',\n    phone: args.phone || args.phoneNumber || (message.call && message.call.customer && message.call.customer.number) || '',\n    date: args.date || '',\n    time: args.time || '',\n    service: args.service || 'General Appointment'\n  }\n}];"
+      },
+      "id": "3bf1930d-4e73-4725-bb54-2ce8cf898ca0",
+      "name": "Parse Tool Call",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.functionName }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "check_availability"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.functionName }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "book_appointment"
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "Unknown Function"
+        }
+      },
+      "id": "80fa3cc6-6136-4700-b760-c1ae932d8e41",
+      "name": "Route by Function",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        448,
+        176
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "5DIpAonSZb7ob67J",
+          "cachedResultName": "vapi_appointments"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "appointmentDate",
+              "keyValue": "={{ $json.date }}"
+            }
+          ]
+        },
+        "returnAll": true
+      },
+      "id": "c84cd160-8b1a-4134-849e-263800dd8d2b",
+      "name": "Get Appointments for Date",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        896,
+        0
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"results\": [ { \"toolCallId\": $json.toolCallId, \"result\": $json.resultText } ] } }}",
+        "options": {}
+      },
+      "id": "0fb874f0-376c-41fa-a1ba-82235483b320",
+      "name": "Respond to Vapi",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1344,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "5DIpAonSZb7ob67J",
+          "cachedResultName": "vapi_appointments"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "customerName": "={{ $json.customerName }}",
+            "phone": "={{ $json.phone }}",
+            "service": "={{ $json.service }}",
+            "appointmentDate": "={{ $json.date }}",
+            "appointmentTime": "={{ $json.time }}",
+            "status": "confirmed",
+            "toolCallId": "={{ $json.toolCallId }}"
+          },
+          "schema": [
+            {
+              "id": "customerName",
+              "displayName": "customerName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "service",
+              "displayName": "service",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "appointmentDate",
+              "displayName": "appointmentDate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "appointmentTime",
+              "displayName": "appointmentTime",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "toolCallId",
+              "displayName": "toolCallId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "978a990a-e207-4d0b-aada-3cf78d5916b1",
+      "name": "Insert Appointment",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        672,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "zqxthornbury482@gmail.com",
+        "subject": "=New Appointment Booking - {{ $(\"Parse Tool Call\").item.json.customerName }}",
+        "emailType": "text",
+        "message": "=A new appointment has been booked via the voice agent.\n\nCustomer: {{ $(\"Parse Tool Call\").item.json.customerName }}\nPhone: {{ $(\"Parse Tool Call\").item.json.phone }}\nService: {{ $(\"Parse Tool Call\").item.json.service }}\nDate: {{ $(\"Parse Tool Call\").item.json.date }}\nTime: {{ $(\"Parse Tool Call\").item.json.time }}",
+        "options": {}
+      },
+      "id": "d541ee8d-654d-49b4-9a1a-14ae92f6ee74",
+      "name": "Notify Business Owner",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        896,
+        192
+      ],
+      "webhookId": "3fdfbe86-a7f2-48f0-a681-652cd13eadd0",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "8V2StsQen3Sjby7D",
+          "name": "Gmail OAuth2 API"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const tc = $('Parse Tool Call').item.json;\nconst resultText = `Great, your ${tc.service} appointment is confirmed for ${tc.date} at ${tc.time}. You'll receive a confirmation shortly. Is there anything else I can help with?`;\nreturn [{\n  json: {\n    toolCallId: tc.toolCallId,\n    resultText\n  }\n}];"
+      },
+      "id": "9c8a66b4-0f3e-404c-842b-4ad708762f99",
+      "name": "Build Booking Confirmation",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const tc = $('Parse Tool Call').item.json;\nreturn [{\n  json: {\n    toolCallId: tc.toolCallId,\n    resultText: `Sorry, I'm not able to handle the \"${tc.functionName}\" request right now.`\n  }\n}];"
+      },
+      "id": "1aa37a50-2bd2-40c6-93f4-f5cbb6748758",
+      "name": "Unknown Function",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Vapi Appointment Booking Agent\n\n1. Create a Vapi Assistant at vapi.ai\n2. Add two Custom Tools (Functions): `check_availability` (param: date) and `book_appointment` (params: name, phone, service, date, time)\n3. Set the Server URL for both tools to this workflow's Production Webhook URL (shown on the Webhook node once published)\n4. Connect the \"Notify Business Owner\" Gmail node to your Gmail account (credentials must be added manually)\n5. Publish this workflow (toggle Active) before testing calls",
+        "height": 200,
+        "width": 300,
+        "color": 4
+      },
+      "id": "5643f05f-adfa-4fea-9a43-be5cbc098455",
+      "name": "Sticky Note 37c7ab5d",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -48,
+        -48
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const bookedTimes = $input.all().map(item => item.json.appointmentTime).filter(Boolean);\nconst businessHours = ['09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00'];\nconst available = businessHours.filter(t => !bookedTimes.includes(t));\nconst date = $('Parse Tool Call').item.json.date || 'the requested date';\nconst resultText = available.length > 0\n  ? `Available appointment slots on ${date}: ${available.join(', ')}.`\n  : `Sorry, there are no available slots on ${date}. Please try another date.`;\n\nreturn [{\n  json: {\n    toolCallId: $('Parse Tool Call').item.json.toolCallId,\n    resultText\n  }\n}];"
+      },
+      "id": "92c509ed-fffe-4cfc-8889-24a47f15e63f",
+      "name": "Compute Available Slots",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        0
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Vapi Tool Call Webhook": {
+      "main": [
+        [
+          {
+            "node": "Parse Tool Call",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Tool Call": {
+      "main": [
+        [
+          {
+            "node": "Route by Function",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by Function": {
+      "main": [
+        [
+          {
+            "node": "Get Appointments for Date",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Insert Appointment",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Unknown Function",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Appointments for Date": {
+      "main": [
+        [
+          {
+            "node": "Compute Available Slots",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Appointment": {
+      "main": [
+        [
+          {
+            "node": "Notify Business Owner",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify Business Owner": {
+      "main": [
+        [
+          {
+            "node": "Build Booking Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Booking Confirmation": {
+      "main": [
+        [
+          {
+            "node": "Respond to Vapi",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Unknown Function": {
+      "main": [
+        [
+          {
+            "node": "Respond to Vapi",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compute Available Slots": {
+      "main": [
+        [
+          {
+            "node": "Respond to Vapi",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "versionId": "b0885862-8c13-4dd3-b910-420409bcd4d7",
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp",
+    "instanceId": "322e84ab49c3ec0c3806f93c85479ae341bfe76959d8ff5ad5ffacbc73e6afcb"
+  },
+  "nodeGroups": [],
+  "id": "waD1077uEg2yZcEY",
+  "tags": []
+}
